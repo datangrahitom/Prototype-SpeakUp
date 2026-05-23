@@ -142,8 +142,16 @@ function getDbPath() {
 }
 
 export function getDatabase(): Schema {
+  const ensureSchema = (db: Schema): Schema => {
+    if (!db.users) db.users = [];
+    if (!db.reports) db.reports = [];
+    if (!db.messages) db.messages = [];
+    if (!db.panics) db.panics = [];
+    return db;
+  };
+
   if (g.__speakup_db) {
-    return g.__speakup_db;
+    return ensureSchema(g.__speakup_db);
   }
 
   // Attempt to read from file
@@ -151,7 +159,7 @@ export function getDatabase(): Schema {
     const dbPath = getDbPath();
     if (fs.existsSync(dbPath)) {
       const data = fs.readFileSync(dbPath, 'utf-8');
-      g.__speakup_db = JSON.parse(data);
+      g.__speakup_db = ensureSchema(JSON.parse(data));
       return g.__speakup_db!;
     }
   } catch (e) {
@@ -159,12 +167,12 @@ export function getDatabase(): Schema {
   }
 
   // Fallback / Initial seeding
-  g.__speakup_db = {
+  g.__speakup_db = ensureSchema({
     users: DEFAULT_USERS,
     reports: DEFAULT_REPORTS,
     messages: DEFAULT_MESSAGES,
     panics: DEFAULT_PANICS
-  };
+  });
   saveDatabase(g.__speakup_db);
   return g.__speakup_db;
 }

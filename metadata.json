@@ -1,0 +1,8 @@
+{
+  "name": "SpeakUp",
+  "description": "Platform Laporan Bullying & Konseling Sekolah SpeakUp untuk menciptakan lingkungan sekolah yang aman, suportif, dan bebas perundungan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

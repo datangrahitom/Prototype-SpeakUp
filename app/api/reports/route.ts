@@ -94,6 +94,17 @@ export async function PUT(req: NextRequest) {
 
     db.reports[reportIndex] = updated;
 
+    // If report is "Panggilan Darurat" and updated status is "Selesai",
+    // also automatically mark the active panic trigger for this pelapor as "Selesai"!
+    if (updated.jenis === 'Panggilan Darurat' && newStatus === 'Selesai') {
+      const activePanicIndex = db.panics.findIndex(
+        (p) => p.siswaId === updated.pelaporId && p.status === 'Aktif'
+      );
+      if (activePanicIndex !== -1) {
+        db.panics[activePanicIndex].status = 'Selesai';
+      }
+    }
+
     // Send chat if status changes
     if (newStatus !== oldStatus) {
       const pelaporId = updated.pelaporId;

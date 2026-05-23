@@ -83,9 +83,22 @@ export async function PUT(req: NextRequest) {
     const index = db.panics.findIndex((p) => p.id === id);
 
     if (index !== -1) {
-      db.panics[index].status = 'Selesai';
+      const panicObj = db.panics[index];
+      panicObj.status = 'Selesai';
+
+      // Also mark any associated "Panggilan Darurat" report for this student as "Selesai"
+      const reportIndex = db.reports.findIndex(
+        (r) => r.pelaporId === panicObj.siswaId && r.jenis === 'Panggilan Darurat' && r.status !== 'Selesai'
+      );
+      if (reportIndex !== -1) {
+        db.reports[reportIndex].status = 'Selesai';
+        db.reports[reportIndex].catatan = db.reports[reportIndex].catatan 
+          ? `${db.reports[reportIndex].catatan}\nAtasi via banner darurat.`
+          : 'Diatasi oleh Admin via banner darurat.';
+      }
+
       saveDatabase(db);
-      return NextResponse.json(db.panics[index]);
+      return NextResponse.json(panicObj);
     }
 
     return NextResponse.json({ error: 'Alarm tidak ditemukan.' }, { status: 404 });

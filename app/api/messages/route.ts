@@ -53,7 +53,8 @@ export async function POST(req: NextRequest) {
       penerimaId,
       teks,
       tanggal: jamMnt,
-      timestamp: now.toISOString()
+      timestamp: now.toISOString(),
+      status: 'delivered'
     };
 
     db.messages.push(newMsg);

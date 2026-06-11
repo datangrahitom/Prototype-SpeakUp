@@ -36,6 +36,7 @@ export interface ChatMessage {
   teks: string;
   tanggal: string; // e.g. "11.18" or "12.30"
   timestamp: string; // ISO format
+  status?: 'sent' | 'delivered';
 }
 
 export interface PanicTrigger {
@@ -133,9 +134,40 @@ const DEFAULT_PANICS: PanicTrigger[] = [];
 // Use Node's global object for hot-reload-safe/in-memory server state
 interface CustomGlobal {
   __speakup_db?: Schema;
+  __speakup_typing?: {
+    [senderId: string]: {
+      penerimaId: string;
+      timestamp: string;
+    };
+  };
 }
 
 const g = global as unknown as CustomGlobal;
+
+export function setTyping(senderId: string, penerimaId: string): void {
+  if (!g.__speakup_typing) {
+    g.__speakup_typing = {};
+  }
+  g.__speakup_typing[senderId] = {
+    penerimaId,
+    timestamp: new Date().toISOString()
+  };
+}
+
+export function getTypingUsersFor(selfId: string): string[] {
+  if (!g.__speakup_typing) return [];
+  const now = Date.now();
+  const list: string[] = [];
+  for (const [senderId, record] of Object.entries(g.__speakup_typing)) {
+    if (record.penerimaId === selfId) {
+      const diff = now - new Date(record.timestamp).getTime();
+      if (diff < 4000) {
+        list.push(senderId);
+      }
+    }
+  }
+  return list;
+}
 
 function getDbPath() {
   return path.join(process.cwd(), 'lib_db.json');

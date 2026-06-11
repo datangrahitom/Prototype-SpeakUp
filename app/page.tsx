@@ -21,6 +21,7 @@ import {
   Moon,
   LogOut,
   Check,
+  CheckCheck,
   Info,
   FileText,
   AlertTriangle,
@@ -75,6 +76,7 @@ interface ChatMessage {
   teks: string;
   tanggal: string;
   timestamp: string;
+  status?: 'sent' | 'delivered';
 }
 
 interface PanicTrigger {
@@ -149,7 +151,9 @@ export default function Home() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [activeChatPartner, setActiveChatPartner] = useState<UserSession | null>(null);
   const [chatInputValue, setChatInputValue] = useState('');
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const lastTypingSentRef = useRef<number>(0);
 
   // Triage state
   const [selectedReportForTriage, setSelectedReportForTriage] = useState<Report | null>(null);
@@ -515,18 +519,20 @@ export default function Home() {
     };
 
     try {
-      const [reportsRes, usersRes, messagesRes, panicsRes] = await Promise.all([
+      const currentSession = sessionRef.current;
+      const typingUrl = currentSession ? `/api/typing?selfId=${currentSession.id}` : null;
+      const [reportsRes, usersRes, messagesRes, panicsRes, typingRes] = await Promise.all([
         safeFetchJson('/api/reports'),
         safeFetchJson('/api/users'),
         safeFetchJson('/api/messages'),
-        safeFetchJson('/api/panics')
+        safeFetchJson('/api/panics'),
+        typingUrl ? safeFetchJson(typingUrl) : null
       ]);
 
       if (reportsRes && Array.isArray(reportsRes)) {
         // Only run detection check if:
         // 1. Current user is an admin
         // 2. We already populated the initial "known" set (meaning this is a dynamic update/new submission)
-        const currentSession = sessionRef.current;
         if (currentSession?.role === 'admin' && knownReportIdsRef.current.size > 0) {
           const newBaruReports = reportsRes.filter((r: Report) => r.status === 'Baru' && !knownReportIdsRef.current.has(r.id));
           if (newBaruReports.length > 0) {
@@ -547,6 +553,9 @@ export default function Home() {
       if (usersRes && Array.isArray(usersRes)) setUsers(usersRes);
       if (messagesRes && Array.isArray(messagesRes)) setMessages(messagesRes);
       if (panicsRes && Array.isArray(panicsRes)) setActivePanics(panicsRes);
+      if (typingRes && typingRes.typingUsers && Array.isArray(typingRes.typingUsers)) {
+        setTypingUsers(typingRes.typingUsers);
+      }
     } catch (e) {
       console.error('Failed to update dashboard databases', e);
     }
@@ -958,6 +967,28 @@ export default function Home() {
     }
   };
 
+  const handleUserTyping = async (inputValue: string) => {
+    setChatInputValue(inputValue);
+    if (!inputValue.trim() || !activeChatPartner || !session) return;
+
+    const now = Date.now();
+    if (now - lastTypingSentRef.current > 2000) {
+      lastTypingSentRef.current = now;
+      try {
+        await fetch('/api/typing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            senderId: session.id,
+            penerimaId: activeChatPartner.id
+          })
+        });
+      } catch (err) {
+        console.error('Failed to send typing status', err);
+      }
+    }
+  };
+
   // Push counselor direct message
   const handleSendDirectMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -976,7 +1007,8 @@ export default function Home() {
       penerimaId: activeChatPartner.id,
       teks: chatInputValue.trim(),
       tanggal: new Date().toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute: '2-digit' }),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      status: 'sent'
     };
     setMessages(prev => [...prev, clientMsg]);
     setChatInputValue('');
@@ -2562,13 +2594,43 @@ export default function Home() {
                                   : 'bg-white text-zinc-800 rounded-tl-none border border-zinc-200'
                             }`}>
                               <p className="leading-relaxed whitespace-pre-line tracking-wide">{msg.teks}</p>
-                              <span className={`text-[9px] font-mono block text-right mt-1 opacity-60 ${isSelf ? 'text-blue-100' : 'text-zinc-400'}`}>
-                                {msg.tanggal}
-                              </span>
+                              <div className="flex items-center justify-end space-x-1 mt-1 opacity-75">
+                                <span className={`text-[9px] font-mono ${isSelf ? 'text-blue-100' : 'text-zinc-450'}`}>
+                                  {msg.tanggal}
+                                </span>
+                                {isSelf && (
+                                  msg.status === 'sent' ? (
+                                    <span title="Sent (Terkirim)" className="inline-flex"><Check className="w-3 h-3 text-blue-200 shrink-0" /></span>
+                                  ) : (
+                                    <span title="Delivered (Tersampaikan)" className="inline-flex"><CheckCheck className="w-3 h-3 text-emerald-300 shrink-0" /></span>
+                                  )
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
                       })}
+
+                    {/* Typing Indicator Bubble */}
+                    {typingUsers.includes(activeChatPartner.id) && (
+                      <div className="flex justify-start animate-fade-in my-1">
+                        <div className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm text-xs rounded-tl-none border flex items-center space-x-2 ${
+                          isDark
+                            ? 'bg-zinc-900 border-zinc-800 text-zinc-300'
+                            : 'bg-white border-zinc-200 text-zinc-650'
+                        }`}>
+                          <span className="font-semibold text-[10px] text-blue-500 tracking-wide">
+                            {activeChatPartner.nama} sedang mengetik
+                          </span>
+                          <span className="flex space-x-0.5 items-center pt-0.5">
+                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></span>
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     <div ref={chatEndRef} />
                   </div>
 
@@ -2589,7 +2651,7 @@ export default function Home() {
                       type="text"
                       placeholder="Ketik balasan..."
                       value={chatInputValue}
-                      onChange={(e) => setChatInputValue(e.target.value)}
+                      onChange={(e) => handleUserTyping(e.target.value)}
                       className={`flex-1 px-4 py-2.5 rounded-full text-xs border focus:outline-none transition-all ${
                         isDark 
                           ? 'bg-zinc-950 border-zinc-800 text-white placeholder-zinc-500' 

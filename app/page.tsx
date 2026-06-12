@@ -88,6 +88,135 @@ interface PanicTrigger {
   timestamp: string;
 }
 
+const SEED_USERS: UserSession[] = [
+  {
+    id: 'u-admin-1',
+    username: 'adminspeakup1',
+    nama: 'Admin Guru BK 1',
+    role: 'admin',
+    avatar: '🛡️',
+    password: '3P26D5!'
+  },
+  {
+    id: 'u-admin-2',
+    username: 'adminspeakup2',
+    nama: 'Operator SpeakUp 2',
+    role: 'admin',
+    avatar: '🎓',
+    password: 'AUD668!'
+  },
+  {
+    id: 'u-admin-3',
+    username: 'adminspeakup3',
+    nama: 'Kepala Sekolah',
+    role: 'admin',
+    avatar: '⚖️',
+    password: '75T621!'
+  },
+  {
+    id: 'u-siswa-adam',
+    username: 'adam',
+    nama: 'Adam Hermawan',
+    role: 'siswa',
+    kelas: 'Kelas 10 MIPA 1',
+    avatar: '👦',
+    password: 'XNV283!'
+  },
+  {
+    id: 'u-siswa-siti',
+    username: 'siti',
+    nama: 'Siti Rahmaawati',
+    role: 'siswa',
+    kelas: 'Kelas 10 MIPA 2',
+    avatar: '👧',
+    password: 'N3E959!'
+  }
+];
+
+const SEED_REPORTS: Report[] = [
+  {
+    id: 'rep-seed-1',
+    pelaporId: 'u-siswa-adam',
+    pelaporNama: 'Adam Hermawan',
+    pelaporKelas: 'Kelas 10 MIPA 1',
+    isAnonim: false,
+    jenis: 'Bullying Verbal',
+    deskripsi: 'Saya diejek oleh teman-teman kelas saat jam istirahat di kantin karena nilai ujian saya rendah.',
+    lokasi: 'Kantin Sekolah',
+    prioritas: 'Tinggi',
+    status: 'Baru',
+    catatan: '',
+    tanggal: '13:02',
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    frekuensi: 'Beberapa Kali',
+    relasi: 'Teman Sekelas'
+  },
+  {
+    id: 'rep-seed-2',
+    pelaporId: 'u-siswa-siti',
+    pelaporNama: 'Siti Rahmaawati',
+    pelaporKelas: 'Kelas 10 MIPA 2',
+    isAnonim: true,
+    jenis: 'Bullying Fisik',
+    deskripsi: 'Ada pemalakan/pemerasan uang jajan di dekat gerbang belakang saat pulang sekolah.',
+    lokasi: 'Gerbang Belakang',
+    prioritas: 'Sedang',
+    status: 'Proses',
+    catatan: 'Sedang diselidiki CCTV area gerbang tahun ini.',
+    tanggal: '10 Jun',
+    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    frekuensi: 'Satu Kali',
+    relasi: 'Kakak Kelas'
+  },
+  {
+    id: 'rep-seed-3',
+    pelaporId: 'u-siswa-adam',
+    pelaporNama: 'Adam Hermawan',
+    pelaporKelas: 'Kelas 10 MIPA 1',
+    isAnonim: false,
+    jenis: 'Cyber Bullying',
+    deskripsi: 'Penyebaran rumor tidak senang di grup WhatsApp tanpa menyertakan saya.',
+    lokasi: 'Grup WhatsApp Kelas',
+    prioritas: 'Rendah',
+    status: 'Selesai',
+    catatan: 'Masalah telah diselesaikan secara damai oleh Wali Kelas.',
+    tanggal: '09 Jun',
+    createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
+    frekuensi: 'Baru Sekali',
+    relasi: 'Teman Kelas Lain'
+  }
+];
+
+const SEED_MESSAGES: ChatMessage[] = [
+  {
+    id: 'msg-seed-1',
+    pengirimId: 'u-siswa-adam',
+    penerimaId: 'u-admin-1',
+    teks: 'Selamat siang Pak/Bu, saya ingin menanyakan perkembangan laporan saya mengenai ejekan di kantin.',
+    tanggal: '14:20',
+    timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+    status: 'delivered'
+  },
+  {
+    id: 'msg-seed-2',
+    pengirimId: 'u-admin-1',
+    penerimaId: 'u-siswa-adam',
+    teks: 'Selamat siang Adam. Laporanmu sudah kami terima dan sedang dijadwalkan untuk pemanggilan perwakilan hari ini. Hubungi kami jika butuh pendampingan segera ya.',
+    tanggal: '14:25',
+    timestamp: new Date(Date.now() - 55 * 60 * 1000).toISOString(),
+    status: 'delivered'
+  },
+  {
+    id: 'msg-seed-3',
+    pengirimId: 'u-siswa-adam',
+    penerimaId: 'u-admin-1',
+    teks: 'Baik Pak/Bu, terima kasih banyak atas respons cepatnya! Saya merasa jauh lebih aman sekarang.',
+    tanggal: '14:30',
+    timestamp: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
+    status: 'delivered'
+  }
+];
+
 export default function Home() {
   const [mounted, setMounted] = useState(false);
 
@@ -295,31 +424,26 @@ export default function Home() {
 
     setIsSavingProfile(true);
     try {
-      const res = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: session.id,
-          nama: trimmedNama,
-          avatar: editProfileAvatar,
-          kelas: session.role === 'siswa' ? editProfileKelas : undefined
-        })
+      const currentUsers: UserSession[] = JSON.parse(localStorage.getItem('speakup_users') || '[]');
+      const updatedUsers = currentUsers.map(u => {
+        if (u.id === session.id) {
+          return {
+            ...u,
+            nama: trimmedNama,
+            avatar: editProfileAvatar,
+            kelas: session.role === 'siswa' ? editProfileKelas : u.kelas
+          };
+        }
+        return u;
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        triggerToast(errorData.error || 'Gagal menyimpan profil.');
-        setIsSavingProfile(false);
-        return;
-      }
+      localStorage.setItem('speakup_users', JSON.stringify(updatedUsers));
 
-      const updatedUser = await res.json();
-      
       const newSession: UserSession = {
         ...session,
-        nama: updatedUser.nama,
-        avatar: updatedUser.avatar,
-        kelas: updatedUser.kelas
+        nama: trimmedNama,
+        avatar: editProfileAvatar,
+        kelas: session.role === 'siswa' ? editProfileKelas : session.kelas
       };
       setSession(newSession);
       localStorage.setItem('speakup_session', JSON.stringify(newSession));
@@ -328,8 +452,7 @@ export default function Home() {
       setShowEditProfileModal(false);
       fetchData();
     } catch (err) {
-      console.error(err);
-      triggerToast('Koneksi server gagal.');
+      triggerToast('Gagal mendaftarkan perubahan profil.');
     } finally {
       setIsSavingProfile(false);
     }
@@ -497,37 +620,36 @@ export default function Home() {
     }
   };
 
-  // Fetch all backend data
+  // Fetch all backend data (Fully Local Offline Solution)
   const fetchData = async () => {
-    const safeFetchJson = async (url: string) => {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) {
-          console.warn(`Fetch ${url} failed with status ${res.status}`);
-          return null;
-        }
-        const contentType = res.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          console.warn(`Fetch ${url} did not return JSON. Content-Type: ${contentType}`);
-          return null;
-        }
-        return await res.json();
-      } catch (err) {
-        console.error(`Network or parse error on fetch ${url}:`, err);
-        return null;
-      }
-    };
+    if (typeof window === 'undefined') return;
 
     try {
+      // 1. Initialize local collections in localStorage if they don't exist
+      if (!localStorage.getItem('speakup_users')) {
+        localStorage.setItem('speakup_users', JSON.stringify(SEED_USERS));
+      }
+      if (!localStorage.getItem('speakup_reports')) {
+        localStorage.setItem('speakup_reports', JSON.stringify(SEED_REPORTS));
+      }
+      if (!localStorage.getItem('speakup_messages')) {
+        localStorage.setItem('speakup_messages', JSON.stringify(SEED_MESSAGES));
+      }
+      if (!localStorage.getItem('speakup_active_panics')) {
+        localStorage.setItem('speakup_active_panics', JSON.stringify([]));
+      }
+      if (!localStorage.getItem('speakup_typing_users')) {
+        localStorage.setItem('speakup_typing_users', JSON.stringify([]));
+      }
+
+      // 2. Read from localStorage
+      const reportsRes = JSON.parse(localStorage.getItem('speakup_reports') || '[]');
+      const usersRes = JSON.parse(localStorage.getItem('speakup_users') || '[]');
+      const messagesRes = JSON.parse(localStorage.getItem('speakup_messages') || '[]');
+      const panicsRes = JSON.parse(localStorage.getItem('speakup_active_panics') || '[]');
+      const typingRes = JSON.parse(localStorage.getItem('speakup_typing_users') || '[]');
+
       const currentSession = sessionRef.current;
-      const typingUrl = currentSession ? `/api/typing?selfId=${currentSession.id}` : null;
-      const [reportsRes, usersRes, messagesRes, panicsRes, typingRes] = await Promise.all([
-        safeFetchJson('/api/reports'),
-        safeFetchJson('/api/users'),
-        safeFetchJson('/api/messages'),
-        safeFetchJson('/api/panics'),
-        typingUrl ? safeFetchJson(typingUrl) : null
-      ]);
 
       if (reportsRes && Array.isArray(reportsRes)) {
         // Only run detection check if:
@@ -553,11 +675,22 @@ export default function Home() {
       if (usersRes && Array.isArray(usersRes)) setUsers(usersRes);
       if (messagesRes && Array.isArray(messagesRes)) setMessages(messagesRes);
       if (panicsRes && Array.isArray(panicsRes)) setActivePanics(panicsRes);
-      if (typingRes && typingRes.typingUsers && Array.isArray(typingRes.typingUsers)) {
-        setTypingUsers(typingRes.typingUsers);
+      
+      // Filter typing status based on receiver/penerimaId
+      if (Array.isArray(typingRes)) {
+        const currentId = currentSession?.id;
+        const typingList = typingRes
+          .filter((t: any) => t.penerimaId === currentId && (Date.now() - t.timestamp < 3500))
+          .map((t: any) => t.senderId);
+        
+        // Find users corresponding to these sender IDs
+        const typingNames = usersRes
+          .filter((u: any) => typingList.includes(u.id))
+          .map((u: any) => u.nama);
+        setTypingUsers(typingNames);
       }
     } catch (e) {
-      console.error('Failed to update dashboard databases', e);
+      console.error('Failed to update dashboard databases locally', e);
     }
   };
 
@@ -595,7 +728,7 @@ export default function Home() {
     }
   }, [theme]);
 
-  // Sync / Polling intervals (every 4 seconds for immediate multi-role dynamic updates)
+  // Sync / Polling intervals (every 4 seconds for immediate multi-role local updates)
   useEffect(() => {
     const timer = setInterval(() => {
       fetchData();
@@ -613,7 +746,7 @@ export default function Home() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Login handler
+  // Login handler (Local Offline Authentication)
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!usernameInput || !passwordInput) {
@@ -623,49 +756,42 @@ export default function Home() {
     setLoginError('');
     setIsLoggingIn(true);
 
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: usernameInput, password: passwordInput })
-      });
+    // Simulate small latency for realistic loading state
+    setTimeout(() => {
+      try {
+        const storedUsers: UserSession[] = JSON.parse(localStorage.getItem('speakup_users') || JSON.stringify(SEED_USERS));
+        const matchedUser = storedUsers.find(
+          u => u.username.toLowerCase() === usernameInput.toLowerCase() && u.password === passwordInput
+        );
 
-      if (!res.ok) {
-        let errMsg = 'Autentikasi gagal.';
-        try {
-          const contentType = res.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            const errData = await res.json();
-            errMsg = errData.error || errMsg;
-          }
-        } catch (e) {
-          // ignore and fallback
+        if (!matchedUser) {
+          setLoginError('Kredensial salah atau akun tidak ditemukan.');
+          setIsLoggingIn(false);
+          return;
         }
-        setLoginError(errMsg);
-        setIsLoggingIn(false);
-        return;
-      }
 
-      const contentType = res.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        setLoginError('Format respons dari server salah.');
-        setIsLoggingIn(false);
-        return;
-      }
+        const userData: UserSession = {
+          id: matchedUser.id,
+          username: matchedUser.username,
+          nama: matchedUser.nama,
+          role: matchedUser.role,
+          kelas: matchedUser.kelas,
+          avatar: matchedUser.avatar || '👤'
+        };
 
-      const userData: UserSession = await res.json();
-      localStorage.setItem('speakup_session', JSON.stringify(userData));
-      knownReportIdsRef.current.clear();
-      setAdminNewReportNotify(null);
-      setSession(userData);
-      setViewState('dashboard');
-      setActiveTab(0);
-      triggerToast(`Selamat datang kembali, ${userData.nama}!`);
-    } catch (err) {
-      setLoginError('Koneksi server gagal.');
-    } finally {
-      setIsLoggingIn(false);
-    }
+        localStorage.setItem('speakup_session', JSON.stringify(userData));
+        knownReportIdsRef.current.clear();
+        setAdminNewReportNotify(null);
+        setSession(userData);
+        setViewState('dashboard');
+        setActiveTab(0);
+        triggerToast(`Selamat datang kembali, ${userData.nama}!`);
+      } catch (err) {
+        setLoginError('Gagal memproses login secara lokal.');
+      } finally {
+        setIsLoggingIn(false);
+      }
+    }, 300);
   };
 
   // Quick Account Autofill helper (as seen in screenshots "Demo Akun")
@@ -697,7 +823,7 @@ export default function Home() {
     triggerToast(`Mode ${nextTheme === 'dark' ? 'Gelap' : 'Terang'} diaktifkan.`);
   };
 
-  // Submit Quick Report
+  // Submit Quick Report (Local Offline Store)
   const handleSubmitLaporCepat = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formCepatLokasi || !formCepatDeskripsi) {
@@ -714,38 +840,42 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch('/api/reports', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pelaporId: session?.id,
-          pelaporNama: session?.nama,
-          pelaporKelas: session?.kelas,
-          isAnonim: formCepatIsAnonim,
-          jenis: 'Laporan Kilat',
-          deskripsi: formCepatDeskripsi,
-          lokasi: formCepatLokasi
-        })
-      });
+      const currentReports: Report[] = JSON.parse(localStorage.getItem('speakup_reports') || '[]');
+      const newReport: Report = {
+        id: `rep-${Date.now()}`,
+        pelaporId: session?.id || 'anonymous',
+        pelaporNama: session?.nama || 'Anonymous',
+        pelaporKelas: session?.kelas,
+        isAnonim: formCepatIsAnonim,
+        jenis: 'Laporan Kilat',
+        deskripsi: formCepatDeskripsi,
+        lokasi: formCepatLokasi,
+        prioritas: 'Sedang',
+        status: 'Baru',
+        catatan: '',
+        tanggal: new Date().toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+        createdAt: new Date().toISOString()
+      };
 
-      if (res.ok) {
-        triggerToast('Laporan cepat berhasil terkirim!');
-        setFormCepatLokasi('');
-        setFormCepatDeskripsi('');
-        setFormCepatIsAnonim(false);
-        setShowLaporCepat(false);
-        fetchData();
-        // Shift to history tab
-        setActiveTab(1);
-      } else {
-        triggerToast('Gagal mengirim laporan.');
-      }
+      currentReports.unshift(newReport); // prepend report
+      localStorage.setItem('speakup_reports', JSON.stringify(currentReports));
+
+      // Clear draft inputs
+      setFormCepatLokasi('');
+      setFormCepatDeskripsi('');
+      setFormCepatIsAnonim(false);
+      setShowLaporCepat(false);
+      triggerToast('Laporan cepat berhasil terkirim!');
+      
+      fetchData();
+      // Shift to history tab
+      setActiveTab(1);
     } catch (err) {
-      triggerToast('Gagal terhubung ke server.');
+      triggerToast('Gagal menyimpan laporan.');
     }
   };
 
-  // Submit Detailed Report
+  // Submit Detailed Report (Local Offline Store)
   const handleSubmitLaporLengkap = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formLengkapLokasi || !formLengkapDeskripsi) {
@@ -762,43 +892,47 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch('/api/reports', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pelaporId: session?.id,
-          pelaporNama: session?.nama,
-          pelaporKelas: session?.kelas,
-          isAnonim: formLengkapIsAnonim,
-          jenis: formLengkapJenis,
-          deskripsi: formLengkapDeskripsi,
-          lokasi: formLengkapLokasi,
-          frekuensi: formLengkapFrekuensi,
-          relasi: formLengkapRelasi
-        })
-      });
+      const currentReports: Report[] = JSON.parse(localStorage.getItem('speakup_reports') || '[]');
+      const newReport: Report = {
+        id: `rep-${Date.now()}`,
+        pelaporId: session?.id || 'anonymous',
+        pelaporNama: session?.nama || 'Anonymous',
+        pelaporKelas: session?.kelas,
+        isAnonim: formLengkapIsAnonim,
+        jenis: formLengkapJenis,
+        deskripsi: formLengkapDeskripsi,
+        lokasi: formLengkapLokasi,
+        frekuensi: formLengkapFrekuensi,
+        relasi: formLengkapRelasi,
+        prioritas: 'Sedang',
+        status: 'Baru',
+        catatan: '',
+        tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+        createdAt: new Date().toISOString()
+      };
 
-      if (res.ok) {
-        triggerToast('Laporan lengkap berhasil terkirim!');
-        setFormLengkapLokasi('');
-        setFormLengkapDeskripsi('');
-        setFormLengkapJenis('Bullying Verbal');
-        setFormLengkapIsAnonim(false);
-        setFormLengkapFrekuensi('Satu Kali');
-        setFormLengkapRelasi('Teman Sekelas');
-        setShowLaporLengkap(false);
-        fetchData();
-        // Shift to history tab
-        setActiveTab(1);
-      } else {
-        triggerToast('Gagal mengirim laporan.');
-      }
+      currentReports.unshift(newReport);
+      localStorage.setItem('speakup_reports', JSON.stringify(currentReports));
+
+      // Clear draft inputs
+      setFormLengkapLokasi('');
+      setFormLengkapDeskripsi('');
+      setFormLengkapJenis('Bullying Verbal');
+      setFormLengkapIsAnonim(false);
+      setFormLengkapFrekuensi('Satu Kali');
+      setFormLengkapRelasi('Teman Sekelas');
+      setShowLaporLengkap(false);
+      triggerToast('Laporan lengkap berhasil terkirim!');
+      
+      fetchData();
+      // Shift to history tab
+      setActiveTab(1);
     } catch (err) {
-      triggerToast('Gagal terhubung ke server.');
+      triggerToast('Gagal menyimpan laporan.');
     }
   };
 
-  // Create Student Account Administrative Trigger
+  // Create Student Account Administrative Trigger (Local Offline Store)
   const handleCreateStudentAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!provUsername || !provPassword) {
@@ -807,37 +941,38 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: provUsername,
-          password: provPassword,
-          nama: provNama,
-          kelas: provKelas
-        })
-      });
-
-      const contentType = res.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        setProvMessage('Gagal menerbitkan akun (Respons di luar format JSON).');
+      const currentUsers: UserSession[] = JSON.parse(localStorage.getItem('speakup_users') || '[]');
+      
+      // Check duplicate username
+      const dup = currentUsers.find(u => u.username.toLowerCase() === provUsername.toLowerCase());
+      if (dup) {
+        setProvMessage('Username sudah terpakai!');
         return;
       }
 
-      const data = await res.json();
-      if (res.ok) {
-        triggerToast('Akun Siswa baru berhasil dibuat!');
-        setProvHistory(prev => [{ username: data.username, pass: data.password, nama: data.nama }, ...prev]);
-        setProvUsername('');
-        setProvPassword('');
-        setProvNama('');
-        setProvMessage(`Berhasil membuat akun: ${data.username} (${data.password})`);
-        fetchData();
-      } else {
-        setProvMessage(data.error || 'Gagal menerbitkan akun.');
-      }
+      const newStudent: UserSession = {
+        id: `u-siswa-${Date.now()}`,
+        username: provUsername,
+        password: provPassword,
+        nama: provNama || `Siswa Uji ${provUsername}`,
+        role: 'siswa',
+        kelas: provKelas || 'Kelas Uji',
+        avatar: ['👦', '👧', '🧑', '👨', '👩'][Math.floor(Math.random() * 5)]
+      };
+
+      currentUsers.push(newStudent);
+      localStorage.setItem('speakup_users', JSON.stringify(currentUsers));
+
+      triggerToast('Akun Siswa baru berhasil dibuat!');
+      setProvHistory(prev => [{ username: newStudent.username, pass: newStudent.password || '', nama: newStudent.nama }, ...prev]);
+      setProvUsername('');
+      setProvPassword('');
+      setProvNama('');
+      setProvMessage(`Berhasil membuat akun: ${newStudent.username} (${newStudent.password})`);
+      
+      fetchData();
     } catch (err) {
-      triggerToast('Koneksi server gagal.');
+      triggerToast('Gagal mendaftarkan akun siswa.');
     }
   };
 
@@ -893,80 +1028,76 @@ export default function Home() {
     setTriageCatatan(report.catatan || '');
   };
 
-  // Save Case Triage changes
+  // Save Case Triage changes (Local Offline Store)
   const handleSaveTriage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedReportForTriage) return;
 
     try {
-      const res = await fetch('/api/reports', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: selectedReportForTriage.id,
-          prioritas: triagePrioritas,
-          status: triageStatus,
-          catatan: triageCatatan,
-          adminId: session?.id
-        })
+      const currentReports: Report[] = JSON.parse(localStorage.getItem('speakup_reports') || '[]');
+      const updatedReports = currentReports.map(r => {
+        if (r.id === selectedReportForTriage.id) {
+          return {
+            ...r,
+            prioritas: triagePrioritas,
+            status: triageStatus,
+            catatan: triageCatatan
+          };
+        }
+        return r;
       });
 
-      if (res.ok) {
-        triggerToast('Perubahan kasus disimpan.');
-        setSelectedReportForTriage(null);
-        fetchData();
-      } else {
-        triggerToast('Gagal merubah data kasus.');
-      }
+      localStorage.setItem('speakup_reports', JSON.stringify(updatedReports));
+
+      triggerToast('Perubahan kasus disimpan.');
+      setSelectedReportForTriage(null);
+      fetchData();
     } catch (err) {
-      triggerToast('Terjadi gangguan server.');
+      triggerToast('Gagal merubah data kasus.');
     }
   };
 
-  // Send physical panic broadcast
+  // Send physical panic broadcast (Local Offline Store)
   const handleSendPanicAlert = async () => {
     if (!session) return;
     try {
-      const res = await fetch('/api/panics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          siswaId: session.id,
-          siswaNama: session.nama,
-          siswaKelas: session.kelas
-        })
-      });
+      const currentPanics: PanicTrigger[] = JSON.parse(localStorage.getItem('speakup_active_panics') || '[]');
+      
+      const newPanic: PanicTrigger = {
+        id: `panic-${Date.now()}`,
+        siswaId: session.id,
+        siswaNama: session.nama,
+        siswaKelas: session.kelas,
+        status: 'Aktif',
+        timestamp: new Date().toISOString()
+      };
 
-      if (res.ok) {
-        triggerToast('⚠️ DARURAT DIKIRIM! Tim keamanan sekolah disiagakan.');
-        setShowPanicConfirm(false);
-        fetchData();
-      } else {
-        triggerToast('Gagal mengirim alarm darurat.');
-      }
+      currentPanics.unshift(newPanic);
+      localStorage.setItem('speakup_active_panics', JSON.stringify(currentPanics));
+
+      triggerToast('⚠️ DARURAT DIKIRIM! Tim keamanan sekolah disiagakan.');
+      setShowPanicConfirm(false);
+      fetchData();
     } catch (err) {
       triggerToast('Gangguan komunikasi darurat.');
     }
   };
 
-  // Admin resolves alert trigger
+  // Admin resolves alert trigger (Local Offline Store)
   const handleResolvePanic = async (panicId: string) => {
     try {
-      const res = await fetch('/api/panics', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: panicId })
-      });
+      const currentPanics: PanicTrigger[] = JSON.parse(localStorage.getItem('speakup_active_panics') || '[]');
+      const updatedPanics = currentPanics.filter(p => p.id !== panicId);
+      localStorage.setItem('speakup_active_panics', JSON.stringify(updatedPanics));
 
-      if (res.ok) {
-        triggerToast('Alarm darurat berhasil diatasi.');
-        fetchData();
-      }
+      triggerToast('Alarm darurat berhasil diatasi.');
+      fetchData();
     } catch (err) {
       triggerToast('Gagal menyelesaikan alarm.');
     }
   };
 
+  // Send typing status (Local Offline Store)
   const handleUserTyping = async (inputValue: string) => {
     setChatInputValue(inputValue);
     if (!inputValue.trim() || !activeChatPartner || !session) return;
@@ -975,34 +1106,32 @@ export default function Home() {
     if (now - lastTypingSentRef.current > 2000) {
       lastTypingSentRef.current = now;
       try {
-        await fetch('/api/typing', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            senderId: session.id,
-            penerimaId: activeChatPartner.id
-          })
+        const currentTyping = JSON.parse(localStorage.getItem('speakup_typing_users') || '[]');
+        
+        // Remove old occurrences of this sender
+        const filteredTyping = currentTyping.filter((t: any) => t.senderId !== session.id);
+        
+        filteredTyping.push({
+          senderId: session.id,
+          penerimaId: activeChatPartner.id,
+          timestamp: now
         });
+
+        localStorage.setItem('speakup_typing_users', JSON.stringify(filteredTyping));
       } catch (err) {
         console.error('Failed to send typing status', err);
       }
     }
   };
 
-  // Push counselor direct message
+  // Push counselor direct message (Local Offline Store)
   const handleSendDirectMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInputValue.trim() || !activeChatPartner || !session) return;
 
-    const messagePayload = {
-      pengirimId: session.id,
-      penerimaId: activeChatPartner.id,
-      teks: chatInputValue.trim()
-    };
-
-    // Optimistic trigger locally first
-    const clientMsg: ChatMessage = {
-      id: `msg-opt-${Date.now()}`,
+    const currentMsgId = `msg-${Date.now()}`;
+    const newMsg: ChatMessage = {
+      id: currentMsgId,
       pengirimId: session.id,
       penerimaId: activeChatPartner.id,
       teks: chatInputValue.trim(),
@@ -1010,20 +1139,24 @@ export default function Home() {
       timestamp: new Date().toISOString(),
       status: 'sent'
     };
-    setMessages(prev => [...prev, clientMsg]);
+
+    // Update state optimistically
+    setMessages(prev => [...prev, newMsg]);
     setChatInputValue('');
 
     try {
-      const res = await fetch('/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(messagePayload)
-      });
-      if (res.ok) {
-        fetchData();
-      }
+      const currentMessages: ChatMessage[] = JSON.parse(localStorage.getItem('speakup_messages') || '[]');
+      currentMessages.push(newMsg);
+      localStorage.setItem('speakup_messages', JSON.stringify(currentMessages));
+
+      // Also remove typing status for this user since they just sent a message
+      const currentTyping = JSON.parse(localStorage.getItem('speakup_typing_users') || '[]');
+      const filteredTyping = currentTyping.filter((t: any) => t.senderId !== session.id);
+      localStorage.setItem('speakup_typing_users', JSON.stringify(filteredTyping));
+
+      fetchData();
     } catch (e) {
-      console.error('Failed to post dispatch message', e);
+      console.error('Failed to save message locally', e);
     }
   };
 
